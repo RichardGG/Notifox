@@ -1,5 +1,6 @@
 package au.id.richardg.notifox;
 
+import android.app.Notification;
 import android.content.Context;
 import android.os.Bundle;
 import android.service.notification.NotificationListenerService;
@@ -27,17 +28,17 @@ public class NotificationListener extends NotificationListenerService{
             @Override
             public void receiveData(Context context, final int transactionId, PebbleDictionary data) {
 
+                PebbleKit.sendAckToPebble(getApplicationContext(),transactionId);
+
                 Log.d("NotificationListener", "Received");
 
                 Log.d("NotificationListener", "received: " + data.getInteger(0) + " from " + data.toJsonString());
                 //Log.i("weee", "Received value=" + data.getUnsignedIntegerAsLong(0) + " for key: 0");
 
-                PebbleDictionary newData = new PebbleDictionary();
-                newData.addInt32(0,43);
-                PebbleKit.sendDataToPebble(getApplicationContext(),PEBBLE_APP_UUID,newData);
+
+                sendCurrentNotifications();
 
 
-                PebbleKit.sendAckToPebble(getApplicationContext(),transactionId);
             }
         });
     }
@@ -56,6 +57,17 @@ public class NotificationListener extends NotificationListenerService{
     @Override
     public void onNotificationRemoved(StatusBarNotification sbn) {
 
+    }
+
+    private void sendCurrentNotifications(){
+
+        StatusBarNotification[] currentNotifications = getActiveNotifications();
+
+
+
+        PebbleDictionary newData = new PebbleDictionary();
+        newData.addString(0, currentNotifications[0].getNotification().extras.getString(Notification.EXTRA_TITLE));
+        PebbleKit.sendDataToPebble(getApplicationContext(),PEBBLE_APP_UUID,newData);
     }
 
 }
