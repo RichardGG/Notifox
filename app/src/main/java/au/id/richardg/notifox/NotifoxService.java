@@ -23,9 +23,9 @@ public class NotifoxService extends NotificationListenerService{
 
     //Incoming message types
     private final static int
-            REQUEST_LIST = 0,
+            REQUEST_ACTIVE = 0,
             DISMISS_NOTIFICATION = 1,
-            REQUEST_ACTIONS = 2;
+            TAKE_ACTION = 2;
 
     //Class instances
     private MessageInterface mMessageInterface;
@@ -35,7 +35,7 @@ public class NotifoxService extends NotificationListenerService{
 
     @Override
     public void  onCreate() {
-        Log.i(TAG, "onCreate");
+        Log.i(TAG, "onCreate()");
 
         //create classes
         mMessageInterface = new MessageInterface(PEBBLE_APP_UUID);
@@ -46,20 +46,20 @@ public class NotifoxService extends NotificationListenerService{
 
     @Override
     public void onNotificationPosted(StatusBarNotification sbn) {
-        Log.i(TAG, "onNotificationPosted");
+        Log.i(TAG, "onNotificationPosted()");
     }
 
     @Override
     public void onNotificationRemoved(StatusBarNotification sbn) {
-        Log.i(TAG, "onNotificationRemoved");
+        Log.i(TAG, "onNotificationRemoved()");
     }
 
     private void onMessageReceived(PebbleDictionary message) {
-        Log.i(TAG, "onMessageReceived");
+        Log.i(TAG, "onMessageReceived()");
        switch (message.getInteger(0).intValue()) {
-           case REQUEST_LIST:
-               Log.i(TAG,"Message: REQUEST_LIST");
-               mMessageBuilder.sendActiveNotifications(getApplicationContext(), getActiveNotifications());
+           case REQUEST_ACTIVE:
+               Log.i(TAG,"Message: REQUEST_ACTIVE");
+               mMessageBuilder.activeNotificationsRequest(getApplicationContext(), getActiveNotifications());
                break;
            case DISMISS_NOTIFICATION:
                Log.i(TAG,"Message: DISMISS_NOTIFICATION");
@@ -70,19 +70,19 @@ public class NotifoxService extends NotificationListenerService{
     }
 
     private void onAckReceived(int transactionId) {
-        Log.i(TAG, "onAckReceived");
+        Log.i(TAG, "onAckReceived()");
         mMessageInterface.success(transactionId);
     }
 
     private void onNackReceived(int transactionId) {
-        Log.i(TAG, "onNackReceived");
+        Log.i(TAG, "onNackReceived()");
         mMessageInterface.fail(transactionId);
     }
 
     private void registerCallbacks(final Context appContext){
-        Log.i(TAG, "registerCallbacks");
+        Log.i(TAG, "registerCallbacks()");
 
-        PebbleKit.registerReceivedDataHandler(appContext, new PebbleKit.PebbleDataReceiver(PEBBLE_APP_UUID) {
+        PebbleKit.registerReceivedDataHandler(getApplicationContext(), new PebbleKit.PebbleDataReceiver(PEBBLE_APP_UUID) {
             @Override
             public void receiveData(Context context, final int transactionId, PebbleDictionary data) {
                 PebbleKit.sendAckToPebble(appContext, transactionId);

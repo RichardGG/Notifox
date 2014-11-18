@@ -9,6 +9,7 @@ import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.service.notification.StatusBarNotification;
 import android.util.DisplayMetrics;
+import android.util.Log;
 
 import com.getpebble.android.kit.util.PebbleDictionary;
 
@@ -22,6 +23,8 @@ import java.util.UUID;
 
 public class MessageBuilder {
 
+    private final static String TAG = "MessageBuilder";
+
     private MessageInterface mMessageInterface;
     private UUID mPebbleAppUuid;
 
@@ -30,7 +33,8 @@ public class MessageBuilder {
         mPebbleAppUuid = pebbleAppUuid;
     }
 
-    public void sendActiveNotifications(Context context, StatusBarNotification[] activeNotifications){
+    public void activeNotificationsRequest(Context context, StatusBarNotification[] activeNotifications){
+        Log.i(TAG, "activeNotificationsRequest()");
 
         PebbleDictionary sizeTest = new PebbleDictionary();
 
