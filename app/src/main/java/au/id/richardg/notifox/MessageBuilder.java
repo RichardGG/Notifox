@@ -33,18 +33,32 @@ public class MessageBuilder {
         mPebbleAppUuid = pebbleAppUuid;
     }
 
-    public void activeNotificationsRequest(Context context, StatusBarNotification[] activeNotifications){
+
+    //124 byte max - 8 byte overhead =
+    //116 bytes but can go up to 136?
+
+
+    //icon 96 bytes (16 rows) 3 messages
+    //image 108 bytes (6 rows) 24 messages
+    //126 bytes 20 messages?
+
+    public void activeNotificationsRequest(Context context, StatusBarNotification[] activeNotifications, int currentPos){
         Log.i(TAG, "activeNotificationsRequest()");
 
+        //figure out notifications to send
+        int firstPos = currentPos;
+        if(currentPos+2 >= activeNotifications.length)
+            firstPos = activeNotifications.length - 4;//eg 10-4 = 6 (6,7,8,9)
+
+        for(int i = firstPos; i < firstPos+4; i++){
+            sendNotification(activeNotifications[i]);
+        }
+
+
+        activeNotifications = sortNotifications(activeNotifications);
+
+
         PebbleDictionary sizeTest = new PebbleDictionary();
-
-        //124 byte max - 8 byte overhead =
-        //116 bytes but can go up to 136?
-
-
-        //icon 96 bytes (16 rows) 3 messages
-        //image 108 bytes (6 rows) 24 messages
-        //126 bytes 20 messages?
 
         byte[] bytes = new byte[136];
         for(int i = 0; i < 136; i++)
@@ -52,6 +66,15 @@ public class MessageBuilder {
         sizeTest.addBytes(0,bytes);
 
         mMessageInterface.send(context, sizeTest);
+
+    }
+
+    private StatusBarNotification[] sortNotifications(StatusBarNotification[] notifications){
+        //TODO
+        return notifications;
+    }
+
+    private void sendNotification(StatusBarNotification sbn){
 
     }
 
