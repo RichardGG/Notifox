@@ -45,17 +45,34 @@ public class MessageBuilder {
     public void activeNotificationsRequest(Context context, StatusBarNotification[] activeNotifications, int currentPos){
         Log.i(TAG, "activeNotificationsRequest()");
 
-        //figure out notifications to send
+
+
+        activeNotifications = sortNotifications(activeNotifications);
+
+        //first notif in range
         int firstPos = currentPos;
         if(currentPos+2 >= activeNotifications.length)
             firstPos = activeNotifications.length - 4;//eg 10-4 = 6 (6,7,8,9)
 
+        //last notif in range
+        int lastPos = firstPos + 4;
+        if(lastPos > activeNotifications.length)
+            lastPos = activeNotifications.length;
+
+        //ids of range
+        int[] ids = new int[4];
+        for(int i = firstPos; i < firstPos+4; i++) {
+            ids[0] = getId(activeNotifications[i]);
+        }
+        sendIds(ids, firstPos, activeNotifications.length);
+
+        //send notifs in range
         for(int i = firstPos; i < firstPos+4; i++){
             sendNotification(activeNotifications[i]);
         }
 
 
-        activeNotifications = sortNotifications(activeNotifications);
+
 
 
         PebbleDictionary sizeTest = new PebbleDictionary();
@@ -69,13 +86,23 @@ public class MessageBuilder {
 
     }
 
+    private int getId(StatusBarNotification sbn){
+        //TODO
+        return 0;
+    }
+
     private StatusBarNotification[] sortNotifications(StatusBarNotification[] notifications){
         //TODO
         return notifications;
     }
 
-    private void sendNotification(StatusBarNotification sbn){
+    private void sendIds(int[] ids, int pos, int count)
+    {
+        //TODO
+    }
 
+    private void sendNotification(StatusBarNotification sbn){
+        //TODO
     }
 
 }

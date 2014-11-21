@@ -59,7 +59,7 @@ public class NotifoxService extends NotificationListenerService{
        switch (message.getInteger(0).intValue()) {
            case REQUEST_ACTIVE:
                Log.i(TAG,"Message: REQUEST_ACTIVE");
-               mMessageBuilder.activeNotificationsRequest(getApplicationContext(), getActiveNotifications());
+               mMessageBuilder.activeNotificationsRequest(getApplicationContext(), getActiveNotifications(), 0);
                break;
            case DISMISS_NOTIFICATION:
                Log.i(TAG,"Message: DISMISS_NOTIFICATION");
