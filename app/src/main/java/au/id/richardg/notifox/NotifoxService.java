@@ -39,7 +39,7 @@ public class NotifoxService extends NotificationListenerService{
 
         //create classes
         mMessageInterface = new MessageInterface(PEBBLE_APP_UUID);
-        mMessageBuilder = new MessageBuilder(mMessageInterface, PEBBLE_APP_UUID);
+        mMessageBuilder = new MessageBuilder(mMessageInterface);
 
         registerCallbacks(getApplicationContext());
     }

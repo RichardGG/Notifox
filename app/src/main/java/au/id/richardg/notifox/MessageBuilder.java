@@ -6,8 +6,8 @@ import android.util.Log;
 
 import com.getpebble.android.kit.util.PebbleDictionary;
 
+import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 /*
  *
@@ -20,24 +20,20 @@ public class MessageBuilder {
     private final static String TAG = "MessageBuilder";
 
     private MessageInterface mMessageInterface;
-    private UUID mPebbleAppUuid;
 
-    private Map<Integer, StatusBarNotification> uniqueNotifications;
+    private Map<Integer, StatusBarNotification> uniqueIDs;
     private static int uniqueIDCounter = 0;
 
-    public MessageBuilder(MessageInterface messageInterface, UUID pebbleAppUuid) {
+    public MessageBuilder(MessageInterface messageInterface) {
         mMessageInterface = messageInterface;
-        mPebbleAppUuid = pebbleAppUuid;
+        uniqueIDs = new HashMap<Integer, StatusBarNotification>();
     }
 
+    //TODO change Map to SparseArray
 
-    //124 byte max - 8 byte overhead =
     //116 bytes but can go up to 136?
-
-
     //icon 96 bytes (16 rows) 3 messages
     //image 108 bytes (6 rows) 24 messages
-    //126 bytes 20 messages?
 
     public void activeNotificationsRequest(Context context, StatusBarNotification[] activeNotifications, int currentPos){
         Log.i(TAG, "activeNotificationsRequest()");
@@ -66,7 +62,7 @@ public class MessageBuilder {
         for(int i = firstPos; i < firstPos+4; i++) {
             ids[0] = getUniqueID(activeNotifications[i]);
         }
-        sendIds(context, ids, firstPos, activeNotifications.length);
+        sendUniqueIDs(context, ids, firstPos, activeNotifications.length);
 
         //send notifs in range
         for(int i = firstPos; i < firstPos+4; i++){
@@ -75,33 +71,91 @@ public class MessageBuilder {
     }
 
     private StatusBarNotification[] sortNotifications(StatusBarNotification[] notifications){
-        //TODO
+        Log.i(TAG, "sortNotifications()");
+        //TODO implement for this
+
+        boolean found = false;
+        for(int i = 0; i < 5; i++)
+        {
+            if(!found) {
+                if (topNotifs[i] != null) {
+                    if (topNotifs[i].getNotification().priority <= sbnA.getNotification().priority){
+                        for(int j = 4; j > i; j--){
+                            topNotifs[j] = topNotifs[j-1];
+                        }
+                        topNotifs[i] = sbnA;
+                        found = true;
+                    }
+                } else {
+                    topNotifs[i] = sbnA;
+                    found = true;
+                }
+            }
+        }
+
+
         return notifications;
     }
 
-    private void sendIds(Context context, int[] ids, int pos, int count){
-        //TODO
+    private void sendUniqueIDs(Context context, int[] ids, int pos, int count){
+        Log.i(TAG, "sendUniqueIDs()");
+        //TODO on pebble side
 
-        PebbleDictionary sizeTest = new PebbleDictionary();
+        PebbleDictionary dictionary = new PebbleDictionary();
 
-        byte[] bytes = new byte[136];
-        for(int i = 0; i < 136; i++)
-            bytes[i] = (byte)i;
-        sizeTest.addBytes(0,bytes);
+        //data
+        byte[] bytes = new byte[116];
 
-        mMessageInterface.send(context, sizeTest);
+        //what to put in it
+        //metadata
+        bytes[0]=1;
+        //count
+        bytes[1]=(byte)count;
+        //start position
+        bytes[2]=(byte)pos;
+        //4 bytes per int
+        for (int idNo = 0; idNo < 4; idNo++){
+            for(int i = 0; i < 4; i++) {
+                int shiftAmount = (3*8)-(i*8);
+                bytes[3+(idNo*(3*8)) + i] = (byte) (ids[idNo] >> (i * 8));
+            }
+        }
+        //total bytes = metadata+count+pos+(4*4) = 19 bytes
+
+
+        //add to dictionary and send
+        dictionary.addBytes(0,bytes);
+        mMessageInterface.send(context, dictionary);
     }
 
     private void sendNotification(Context context, StatusBarNotification sbn){
-        //TODO
+        Log.i(TAG, "sendNotification()");
+        //TODO yeah
+
+        PebbleDictionary dictionary = new PebbleDictionary();
+
+        //data
+        byte[] bytes = new byte[116];
+
+        //115 chars max
+        //35? title "Your Pebble is Connected Pbbl4lyf"
+        //80? content "Hello sir or maddam, I hope you are having a good time. I wish to inform you th"
+
+        //what to put in it
+        for(int i = 0; i < 116; i++)
+            bytes[i] = (byte)i;
+
+        //add to dictionary and send
+        dictionary.addBytes(0,bytes);
+        mMessageInterface.send(context, dictionary);
     }
 
     private int getUniqueID(StatusBarNotification sbn){
-
+        Log.i(TAG, "getUniqueID()");
         //find the unique key
         int id = -1;
         boolean found = false;
-        for(Map.Entry<Integer,StatusBarNotification> entry : uniqueNotifications.entrySet()){
+        for(Map.Entry<Integer,StatusBarNotification> entry : uniqueIDs.entrySet()){
             if(sbn.getPackageName().contentEquals(entry.getValue().getPackageName()) && sbn.getId() == entry.getValue().getId()){
                 found = true;
                 id = entry.getKey();
@@ -112,10 +166,10 @@ public class MessageBuilder {
         //if not found, create it
         if(!found){
             //find a new unique key
-            while(uniqueNotifications.containsKey(uniqueIDCounter))
+            while(uniqueIDs.containsKey(uniqueIDCounter))
                 uniqueIDCounter++;
 
-            uniqueNotifications.put(uniqueIDCounter,sbn);
+            uniqueIDs.put(uniqueIDCounter, sbn);
             id = uniqueIDCounter;
         }
 
@@ -123,7 +177,7 @@ public class MessageBuilder {
     }
 
     private void updateUniqueIDs(StatusBarNotification[] notifications){
-
+        Log.i(TAG, "updateUniqueIDs()");
         //for each notification
         for(int i = 0; i < notifications.length; i++) {
             //find or create
@@ -135,9 +189,9 @@ public class MessageBuilder {
     }
 
     private void cleanUniqueIDs(StatusBarNotification[] notifications){
-
+        Log.i(TAG, "cleanUniqueIDs()");
         //for all saved notifications
-        for(Map.Entry<Integer,StatusBarNotification> entry : uniqueNotifications.entrySet()){
+        for(Map.Entry<Integer,StatusBarNotification> entry : uniqueIDs.entrySet()){
             //see if it is active
             boolean found = false;
             for(int i = 0; i < notifications.length; i++){
@@ -148,9 +202,8 @@ public class MessageBuilder {
 
             //otherwise remove it
             if(!found)
-                uniqueNotifications.remove(entry.getKey());
+                uniqueIDs.remove(entry.getKey());
         }
     }
-
 
 }
