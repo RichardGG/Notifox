@@ -1,5 +1,6 @@
 package au.id.richardg.notifox;
 
+import android.app.Notification;
 import android.content.Context;
 import android.service.notification.StatusBarNotification;
 import android.util.Log;
@@ -72,29 +73,31 @@ public class MessageBuilder {
 
     private StatusBarNotification[] sortNotifications(StatusBarNotification[] notifications){
         Log.i(TAG, "sortNotifications()");
-        //TODO implement for this
+        //TODO improve this
 
-        boolean found = false;
-        for(int i = 0; i < 5; i++)
-        {
-            if(!found) {
-                if (topNotifs[i] != null) {
-                    if (topNotifs[i].getNotification().priority <= sbnA.getNotification().priority){
-                        for(int j = 4; j > i; j--){
-                            topNotifs[j] = topNotifs[j-1];
+        StatusBarNotification[] topNotifs = new StatusBarNotification[4];
+        for(StatusBarNotification sbnA : notifications) {
+            boolean found = false;
+            for (int i = 0; i < 4; i++) {
+                if (!found) {
+                    if (topNotifs[i] != null) {
+                        if (topNotifs[i].getNotification().priority <= sbnA.getNotification().priority) {
+                            for (int j = 3; j > i; j--) {
+                                topNotifs[j] = topNotifs[j - 1];
+                            }
+                            topNotifs[i] = sbnA;
+                            found = true;
                         }
+                    } else {
                         topNotifs[i] = sbnA;
                         found = true;
                     }
-                } else {
-                    topNotifs[i] = sbnA;
-                    found = true;
                 }
             }
         }
 
 
-        return notifications;
+        return topNotifs;
     }
 
     private void sendUniqueIDs(Context context, int[] ids, int pos, int count){
@@ -102,11 +105,8 @@ public class MessageBuilder {
         //TODO on pebble side
 
         PebbleDictionary dictionary = new PebbleDictionary();
-
         //data
         byte[] bytes = new byte[116];
-
-        //what to put in it
         //metadata
         bytes[0]=1;
         //count
@@ -130,21 +130,19 @@ public class MessageBuilder {
 
     private void sendNotification(Context context, StatusBarNotification sbn){
         Log.i(TAG, "sendNotification()");
-        //TODO yeah
+        //TODO what if charsequence smaller
 
         PebbleDictionary dictionary = new PebbleDictionary();
-
         //data
         byte[] bytes = new byte[116];
-
-        //115 chars max
-        //35? title "Your Pebble is Connected Pbbl4lyf"
-        //80? content "Hello sir or maddam, I hope you are having a good time. I wish to inform you th"
-
-        //what to put in it
-        for(int i = 0; i < 116; i++)
-            bytes[i] = (byte)i;
-
+        //metadata
+        bytes[0]=2;
+        //35? title
+        for(int i = 0; i < 35; i++)
+            bytes[1+i] = (byte)sbn.getNotification().extras.getCharSequence(Notification.EXTRA_TITLE).charAt(i);
+        //80? content
+        for(int i = 0; i < 80; i++)
+            bytes[36+i] = (byte)sbn.getNotification().extras.getCharSequence(Notification.EXTRA_TEXT).charAt(i);
         //add to dictionary and send
         dictionary.addBytes(0,bytes);
         mMessageInterface.send(context, dictionary);
