@@ -59,15 +59,16 @@ public class MessageBuilder {
             lastPos = activeNotifications.length;
 
         //send ids of range
+        //TODO what if less than 4?
         int[] ids = new int[4];
-        for(int i = firstPos; i < firstPos+4; i++) {
-            ids[0] = getUniqueID(activeNotifications[i]);
+        for(int i = 0; i < 4; i++) {
+            ids[i] = getUniqueID(activeNotifications[i+firstPos]);
         }
         sendUniqueIDs(context, ids, firstPos, activeNotifications.length);
 
         //send notifs in range
         for(int i = firstPos; i < firstPos+4; i++){
-            sendNotification(context, activeNotifications[i]);
+            //sendNotification(context, activeNotifications[i]);
         }
     }
 
@@ -115,11 +116,16 @@ public class MessageBuilder {
         bytes[2]=(byte)pos;
         //4 bytes per int
         for (int idNo = 0; idNo < 4; idNo++){
-            for(int i = 0; i < 4; i++) {
-                int shiftAmount = (3*8)-(i*8);
-                bytes[3+(idNo*(3*8)) + i] = (byte) (ids[idNo] >> (i * 8));
+            Log.d(TAG, "id: " + ids[idNo]);
+            for(int current_byte = 0; current_byte < 4; current_byte++) {
+                int shiftAmount = (3*8)-(current_byte*8);
+                Log.d(TAG,"shift: " + shiftAmount);
+                bytes[3 + (idNo*4) + current_byte] = (byte) (ids[idNo] >> shiftAmount);
+                Log.d(TAG,"pos: " + (3+(idNo*4)+current_byte));
+                Log.d(TAG,"value: " + bytes[3+(idNo*4)+current_byte]);
             }
         }
+        Log.d(TAG, "count: " + count);
         //total bytes = metadata+count+pos+(4*4) = 19 bytes
 
 
@@ -130,7 +136,11 @@ public class MessageBuilder {
 
     private void sendNotification(Context context, StatusBarNotification sbn){
         Log.i(TAG, "sendNotification()");
-        //TODO what if charsequence smaller
+        //TODO change values to #DEFINE
+
+
+        CharSequence title = getTitleContent(sbn);
+        CharSequence text = getTextContent(sbn);
 
         PebbleDictionary dictionary = new PebbleDictionary();
         //data
@@ -138,14 +148,49 @@ public class MessageBuilder {
         //metadata
         bytes[0]=2;
         //35? title
-        for(int i = 0; i < 35; i++)
-            bytes[1+i] = (byte)sbn.getNotification().extras.getCharSequence(Notification.EXTRA_TITLE).charAt(i);
+        for(int i = 0; i < 35; i++) {
+            if (i >= title.length())
+                bytes[1 + i] = 0;
+            bytes[1 + i] = (byte) title.charAt(i);
+        }
         //80? content
-        for(int i = 0; i < 80; i++)
-            bytes[36+i] = (byte)sbn.getNotification().extras.getCharSequence(Notification.EXTRA_TEXT).charAt(i);
+        for(int i = 0; i < 80; i++) {
+            if (i >= text.length())
+                bytes[36 + i] = 0;
+            bytes[36 + i] = (byte) text.charAt(i);
+        }
         //add to dictionary and send
         dictionary.addBytes(0,bytes);
         mMessageInterface.send(context, dictionary);
+    }
+
+    private static CharSequence getTitleContent(StatusBarNotification sbn)
+    {
+        Log.i(TAG, "getTitleContent()");
+        CharSequence titleContent = "";
+        if(sbn.getNotification().extras.get(Notification.EXTRA_TITLE) != null)
+        {
+            int messageLength = sbn.getNotification().extras.getCharSequence(Notification.EXTRA_TITLE).length();
+            if (messageLength > 35)
+                messageLength = 35;
+            titleContent = sbn.getNotification().extras.getCharSequence(Notification.EXTRA_TITLE).subSequence(0, messageLength).toString();
+        }
+        return titleContent;
+
+    }
+
+    static CharSequence getTextContent(StatusBarNotification sbn)
+    {
+        Log.i(TAG, "getTextContent()");
+        CharSequence textContent = " ";
+        if(sbn.getNotification().extras.get(Notification.EXTRA_TEXT) != null)
+        {
+            int messageLength = sbn.getNotification().extras.getCharSequence(Notification.EXTRA_TEXT).length();
+            if (messageLength > 80)
+                messageLength = 80;
+            textContent = sbn.getNotification().extras.getCharSequence(Notification.EXTRA_TEXT).subSequence(0, messageLength).toString();
+        }
+        return textContent;
     }
 
     private int getUniqueID(StatusBarNotification sbn){
@@ -170,7 +215,7 @@ public class MessageBuilder {
             uniqueIDs.put(uniqueIDCounter, sbn);
             id = uniqueIDCounter;
         }
-
+        Log.d(TAG, "returning: " + id);
         return id;
     }
 

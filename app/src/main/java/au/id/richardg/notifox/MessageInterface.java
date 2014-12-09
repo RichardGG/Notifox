@@ -20,12 +20,15 @@ import java.util.UUID;
 
 public class MessageInterface {
 
+    private final static String TAG = "MessageInterface";
+
     private boolean mReadyForSend;
     private List<Message> mMessageQueue;
     private int mTransactionId;
     private UUID mPebbleAppUuid;
 
     public MessageInterface(UUID pebbleAppUuid) {
+        Log.i(TAG, "MessageInterface()");
         mPebbleAppUuid = pebbleAppUuid;
         mReadyForSend = true;
         mTransactionId = 0;
@@ -33,6 +36,7 @@ public class MessageInterface {
     }
 
     public synchronized void send(Context context, PebbleDictionary pebbleDictionary) {
+        Log.i(TAG, "send()");
         if (pebbleDictionary != null) {
             mTransactionId += 1;
             //Log.v(WearService.TAG, "MessageInterface.send() New message: " + mTransactionId);
@@ -50,6 +54,7 @@ public class MessageInterface {
     }
 
     public synchronized void success(int transactionId) {
+        Log.i(TAG, "success()");
         for (Iterator<Message> iterator = mMessageQueue.listIterator(); iterator.hasNext(); ) {
             Message message = iterator.next();
             if (message.getTransactionId() == transactionId) {
@@ -62,15 +67,18 @@ public class MessageInterface {
     }
 
     public void fail(int transactionId) {
+        Log.i(TAG, "fail()");
         // TODO: Do something smart with the NACK'ed responses.
         success(transactionId);
     }
 
     private class Message {
+
         int mTransactionId;
         PebbleDictionary mMessage;
 
         private Message(int transactionId, PebbleDictionary message) {
+            Log.i(TAG, "Message()");
             mTransactionId = transactionId;
             mMessage = message;
         }
