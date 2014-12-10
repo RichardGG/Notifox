@@ -43,6 +43,7 @@ public class MessageInterface {
             mMessageQueue.add(new Message(mTransactionId, pebbleDictionary));
         }
         if (mReadyForSend) {
+            Log.d(TAG, "ready for send");
             if (mMessageQueue.size() > 0) {
                 Message message = mMessageQueue.get(0);
                 //Log.v(WearService.TAG, "MessageInterface.send() Sending message: "+ message.getTransactionId());
@@ -51,6 +52,8 @@ public class MessageInterface {
             }
             mReadyForSend = false;
         }
+        else
+            Log.d(TAG, "not ready for send");
     }
 
     public synchronized void success(int transactionId) {
@@ -60,10 +63,11 @@ public class MessageInterface {
             if (message.getTransactionId() == transactionId) {
                 //Log.v(WearService.TAG, "MessageInterface.success() Removing from queue: " + message.getTransactionId());
                 iterator.remove();
-                return;
+                //return;  screw this line in particular
             }
         }
         mReadyForSend = true;
+        Log.d(TAG, "mreadyforsend = " + mReadyForSend);
     }
 
     public void fail(int transactionId) {
